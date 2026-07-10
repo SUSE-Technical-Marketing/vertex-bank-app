@@ -1,0 +1,21 @@
+# SPDX-License-Identifier: Apache-2.0
+# 04-service-lb.yaml — LoadBalancer variant. Use this on clusters with an IP
+# pool (MetalLB, kube-vip, or the SUSE Virtualization rodeo IP pool). Apply
+# this INSTEAD of 04-service.yaml, not alongside it (same name).
+apiVersion: v1
+kind: Service
+metadata:
+  name: vertex-bank
+  namespace: vertex-bank
+  labels:
+    app.kubernetes.io/name: vertex-bank
+    app.kubernetes.io/part-of: suse-virtualization-rodeo
+spec:
+  selector:
+    app: vertex-bank
+  type: LoadBalancer
+  ports:
+    - name: http
+      port: 80
+      targetPort: 3000
+      protocol: TCP

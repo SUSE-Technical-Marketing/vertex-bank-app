@@ -1,0 +1,22 @@
+# SPDX-License-Identifier: Apache-2.0
+# 00-namespace.yaml — Namespace for the vertex-bank operations console.
+#
+# Fleet's internal Helm engine manages this namespace. takeOwnership: true in
+# fleet.yaml lets Fleet adopt it even if it pre-exists on a cluster.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: vertex-bank
+  labels:
+    app.kubernetes.io/name: vertex-bank
+    app.kubernetes.io/part-of: suse-virtualization-rodeo
+    app.kubernetes.io/managed-by: Helm
+    # Pod Security Admission — required for RKE2 which enforces PSA by default.
+    # "baseline" allows the non-root, no-privilege container.
+    pod-security.kubernetes.io/enforce: baseline
+    pod-security.kubernetes.io/enforce-version: latest
+    pod-security.kubernetes.io/warn: restricted
+    pod-security.kubernetes.io/warn-version: latest
+  annotations:
+    meta.helm.sh/release-name: vertex-bank
+    meta.helm.sh/release-namespace: vertex-bank

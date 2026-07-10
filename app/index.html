@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vertex Trust Bank — Platform Operations</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=SUSE:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+  :root {
+    --green:    #30ba78;
+    --green-d:  #1a8a55;
+    --green-l:  #6fe6a8;
+    --gold:     #d4af37;
+    --gold-d:   #a8862a;
+    --red:      #ff4d4d;
+
+    --bg:       #0e1512;
+    --bg2:      #131d19;
+    --card:     #17211c;
+    --card2:    #1c2822;
+    --line:     rgba(255,255,255,0.08);
+    --line2:    rgba(255,255,255,0.04);
+    --txt:      #e8f0ec;
+    --txt2:     #9db0a6;
+    --txt3:     #6b7d74;
+    --shadow:   0 1px 2px rgba(0,0,0,0.4), 0 8px 24px rgba(0,0,0,0.25);
+    --mono:     'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+  }
+
+  @media (prefers-color-scheme: light) {
+    :root {
+      --bg:     #eef2f0;
+      --bg2:    #e3e9e5;
+      --card:   #ffffff;
+      --card2:  #f6f9f7;
+      --line:   rgba(16,32,24,0.10);
+      --line2:  rgba(16,32,24,0.05);
+      --txt:    #14211b;
+      --txt2:   #52655c;
+      --txt3:   #84968c;
+      --shadow: 0 1px 2px rgba(16,40,28,0.06), 0 10px 30px rgba(16,40,28,0.08);
+    }
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background:
+      radial-gradient(1200px 600px at 90% -10%, rgba(48,186,120,0.10), transparent 60%),
+      radial-gradient(900px 500px at -5% 110%, rgba(212,175,55,0.08), transparent 55%),
+      var(--bg);
+    color: var(--txt);
+    font-family: 'SUSE', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+    letter-spacing: 0.1px;
+  }
+
+  .wrap { max-width: 1280px; margin: 0 auto; padding: 22px 20px 40px; }
+
+  /* ── HEADER ── */
+  .top {
+    display: flex; align-items: center; gap: 16px;
+    padding: 16px 20px; margin-bottom: 20px;
+    background: linear-gradient(180deg, var(--card), var(--card2));
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    box-shadow: var(--shadow);
+    position: relative; overflow: hidden;
+  }
+  .top::after {
+    content: ''; position: absolute; left: 0; right: 0; top: 0; height: 3px;
+    background: linear-gradient(90deg, var(--green), var(--gold));
+  }
+  .brand { display: flex; align-items: center; gap: 14px; }
+  .mark {
+    width: 46px; height: 46px; border-radius: 13px; flex: 0 0 auto;
+    display: grid; place-items: center;
+    background: linear-gradient(135deg, var(--green), var(--green-d));
+    box-shadow: 0 6px 18px rgba(48,186,120,0.35);
+  }
+  .mark svg { width: 26px; height: 26px; }
+  .brand h1 { font-size: 20px; font-weight: 800; line-height: 1.1; }
+  .brand h1 .tm { color: var(--gold); font-weight: 700; }
+  .brand .sub { font-size: 12.5px; color: var(--txt2); font-weight: 500; margin-top: 2px; letter-spacing: 0.3px; }
+
+  .top .spacer { flex: 1; }
+  .meta { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
+  .pill {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 7px 13px; border-radius: 999px;
+    background: var(--card2); border: 1px solid var(--line);
+    font-family: var(--mono); font-size: 12px; font-weight: 600; color: var(--txt2);
+  }
+  .pill.instance { color: var(--gold); border-color: rgba(212,175,55,0.35); background: rgba(212,175,55,0.08); }
+  .pill.clock { color: var(--txt); }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); box-shadow: 0 0 0 0 rgba(48,186,120,0.6); animation: pulse 2s infinite; }
+  .dot.stale { background: var(--red); animation: none; }
+  @keyframes pulse {
+    0%   { box-shadow: 0 0 0 0 rgba(48,186,120,0.5); }
+    70%  { box-shadow: 0 0 0 7px rgba(48,186,120,0); }
+    100% { box-shadow: 0 0 0 0 rgba(48,186,120,0); }
+  }
+
+  /* ── GRID ── */
+  .grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 16px; }
+  .card {
+    background: linear-gradient(180deg, var(--card), var(--card2));
+    border: 1px solid var(--line); border-radius: 16px;
+    box-shadow: var(--shadow); padding: 18px;
+  }
+  .card h2 {
+    font-size: 12px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase;
+    color: var(--txt3); margin-bottom: 14px; display: flex; align-items: center; gap: 8px;
+  }
+  .card h2 .tag { margin-left: auto; font-size: 10px; letter-spacing: 0.6px; color: var(--gold); border: 1px solid rgba(212,175,55,0.3); padding: 2px 7px; border-radius: 6px; text-transform: none; }
+
+  .span3 { grid-column: span 3; } .span4 { grid-column: span 4; }
+  .span5 { grid-column: span 5; } .span6 { grid-column: span 6; }
+  .span7 { grid-column: span 7; } .span8 { grid-column: span 8; } .span12 { grid-column: span 12; }
+
+  /* KPI tiles */
+  .kpis { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; }
+  .kpi { background: linear-gradient(180deg, var(--card), var(--card2)); border: 1px solid var(--line); border-radius: 16px; box-shadow: var(--shadow); padding: 16px 18px; }
+  .kpi .k-label { font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--txt3); }
+  .kpi .k-val { font-size: 27px; font-weight: 800; margin-top: 6px; line-height: 1; font-variant-numeric: tabular-nums; }
+  .kpi .k-val small { font-size: 13px; color: var(--txt2); font-weight: 600; }
+  .kpi .k-sub { font-size: 12px; color: var(--txt2); margin-top: 6px; font-family: var(--mono); }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; font-family: var(--mono); }
+  .badge.green { background: rgba(48,186,120,0.14); color: var(--green-l); }
+  .badge.gold  { background: rgba(212,175,55,0.14); color: var(--gold); }
+
+  /* Meters */
+  .meter { margin-bottom: 16px; }
+  .meter:last-child { margin-bottom: 0; }
+  .meter .m-top { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 7px; }
+  .meter .m-name { font-size: 13px; font-weight: 600; color: var(--txt); }
+  .meter .m-val { font-family: var(--mono); font-size: 13px; font-weight: 600; color: var(--txt2); }
+  .track { height: 10px; border-radius: 999px; background: var(--card2); border: 1px solid var(--line); overflow: hidden; }
+  .fill { height: 100%; border-radius: 999px; width: 0; transition: width 0.8s cubic-bezier(.22,1,.36,1); background: linear-gradient(90deg, var(--green-d), var(--green)); }
+  .fill.warn { background: linear-gradient(90deg, var(--gold-d), var(--gold)); }
+  .fill.crit { background: linear-gradient(90deg, #c23b3b, var(--red)); }
+
+  /* Transactions */
+  .tps-wrap { display: flex; align-items: flex-end; gap: 16px; margin-bottom: 6px; }
+  .tps-num { font-size: 46px; font-weight: 800; line-height: 0.9; font-variant-numeric: tabular-nums; letter-spacing: -1px; }
+  .tps-unit { font-size: 13px; color: var(--txt2); font-weight: 600; margin-bottom: 4px; }
+  canvas.spark { width: 100%; height: 64px; display: block; margin-top: 4px; }
+
+  .statrows { display: flex; flex-direction: column; gap: 0; }
+  .statrow { display: flex; align-items: center; gap: 10px; padding: 11px 0; border-bottom: 1px solid var(--line2); font-size: 13.5px; }
+  .statrow:last-child { border-bottom: 0; }
+  .statrow .s-name { color: var(--txt2); font-weight: 500; }
+  .statrow .s-val { margin-left: auto; font-family: var(--mono); font-weight: 600; }
+  .sdot { width: 9px; height: 9px; border-radius: 50%; flex: 0 0 auto; }
+  .sdot.ok { background: var(--green); box-shadow: 0 0 8px rgba(48,186,120,0.6); }
+  .sdot.gold { background: var(--gold); box-shadow: 0 0 8px rgba(212,175,55,0.5); }
+
+  /* Identity table */
+  .idtable { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .idtable td { padding: 9px 0; border-bottom: 1px solid var(--line2); }
+  .idtable tr:last-child td { border-bottom: 0; }
+  .idtable .l { color: var(--txt3); font-weight: 600; text-transform: uppercase; font-size: 11px; letter-spacing: 0.6px; }
+  .idtable .v { text-align: right; font-family: var(--mono); font-weight: 500; color: var(--txt); }
+
+  /* Log */
+  .log { font-family: var(--mono); font-size: 12.5px; height: 210px; overflow-y: auto; background: var(--bg2); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; }
+  .log .ln { padding: 2.5px 0; color: var(--txt2); white-space: nowrap; }
+  .log .t { color: var(--txt3); }
+  .log .ln.ok .m { color: var(--green-l); }
+  .log .ln.gold .m { color: var(--gold); }
+  .log .ln.info .m { color: var(--txt); }
+  .log::-webkit-scrollbar { width: 8px; }
+  .log::-webkit-scrollbar-thumb { background: var(--line); border-radius: 8px; }
+
+  .foot { margin-top: 22px; text-align: center; color: var(--txt3); font-size: 12px; line-height: 1.7; }
+  .foot a { color: var(--green); text-decoration: none; }
+  .foot .powered { color: var(--txt2); font-weight: 600; }
+  .foot .powered b { color: var(--green); }
+
+  @media (max-width: 980px) {
+    .kpis { grid-template-columns: repeat(2, 1fr); }
+    .span3,.span4,.span5,.span6,.span7,.span8 { grid-column: span 12; }
+  }
+  @media (max-width: 520px) {
+    .kpis { grid-template-columns: 1fr; }
+    .brand h1 { font-size: 17px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- HEADER -->
+  <header class="top">
+    <div class="brand">
+      <div class="mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 2L21 7v2H3V7l9-5z" fill="#fff"/>
+          <rect x="5" y="10" width="2.4" height="7" fill="#fff"/>
+          <rect x="10.8" y="10" width="2.4" height="7" fill="#fff"/>
+          <rect x="16.6" y="10" width="2.4" height="7" fill="#fff"/>
+          <rect x="3" y="18" width="18" height="2.4" fill="#fff"/>
+        </svg>
+      </div>
+      <div>
+        <h1>Vertex <span class="tm">Trust</span> Bank</h1>
+        <div class="sub">Platform Operations Console · Core Ledger Infrastructure</div>
+      </div>
+    </div>
+    <div class="spacer"></div>
+    <div class="meta">
+      <span class="pill instance" id="instance">LEDGER-CORE-01</span>
+      <span class="pill clock" id="clock">--:--:--</span>
+      <span class="pill" id="status"><span class="dot" id="statusDot"></span><span id="statusText">LIVE</span></span>
+    </div>
+  </header>
+
+  <!-- KPI ROW -->
+  <div class="kpis" style="margin-bottom:16px">
+    <div class="kpi">
+      <div class="k-label">Ledger Cluster</div>
+      <div class="k-val" id="k-cluster" style="font-size:19px">—</div>
+      <div class="k-sub"><span class="badge green" id="k-role">worker</span></div>
+    </div>
+    <div class="kpi">
+      <div class="k-label">Nodes Online</div>
+      <div class="k-val" id="k-nodes">—</div>
+      <div class="k-sub">arch <span id="k-arch">—</span></div>
+    </div>
+    <div class="kpi">
+      <div class="k-label">Platform</div>
+      <div class="k-val" id="k-dist" style="font-size:22px">—</div>
+      <div class="k-sub" id="k-ver">—</div>
+    </div>
+    <div class="kpi">
+      <div class="k-label">Node OS</div>
+      <div class="k-val" id="k-os" style="font-size:15px; line-height:1.25">—</div>
+      <div class="k-sub">SUSE supported</div>
+    </div>
+    <div class="kpi">
+      <div class="k-label">Uptime</div>
+      <div class="k-val" id="k-uptime" style="font-size:22px">—</div>
+      <div class="k-sub"><span class="badge gold">SLA 99.99%</span></div>
+    </div>
+  </div>
+
+  <!-- MAIN GRID -->
+  <div class="grid">
+
+    <!-- Transaction throughput (cosmetic) -->
+    <section class="card span7">
+      <h2>Ledger Throughput <span class="tag">simulated feed</span></h2>
+      <div class="tps-wrap">
+        <div class="tps-num" id="tps">0</div>
+        <div class="tps-unit">transactions / sec</div>
+      </div>
+      <canvas class="spark" id="spark" width="800" height="128"></canvas>
+    </section>
+
+    <!-- Compute -->
+    <section class="card span5">
+      <h2>Node Compute · Live</h2>
+      <div class="meter">
+        <div class="m-top"><span class="m-name">CPU load</span><span class="m-val" id="cpuVal">—</span></div>
+        <div class="track"><div class="fill" id="cpuFill"></div></div>
+      </div>
+      <div class="meter">
+        <div class="m-top"><span class="m-name">Memory</span><span class="m-val" id="memVal">—</span></div>
+        <div class="track"><div class="fill" id="memFill"></div></div>
+      </div>
+      <div class="meter" style="margin-top:18px">
+        <div class="m-top"><span class="m-name">Load average (1 / 5 / 15m)</span><span class="m-val" id="loadVal">—</span></div>
+      </div>
+      <div class="meter">
+        <div class="m-top"><span class="m-name" id="cpuModel" style="color:var(--txt2);font-weight:500">—</span></div>
+      </div>
+    </section>
+
+    <!-- Service health (cosmetic) -->
+    <section class="card span5">
+      <h2>Core Banking Services <span class="tag">simulated</span></h2>
+      <div class="statrows">
+        <div class="statrow"><span class="sdot ok"></span><span class="s-name">Distributed ledger sync</span><span class="s-val" id="sv-sync" style="color:var(--green-l)">healthy</span></div>
+        <div class="statrow"><span class="sdot ok"></span><span class="s-name">Settlement engine</span><span class="s-val" style="color:var(--green-l)">online</span></div>
+        <div class="statrow"><span class="sdot ok"></span><span class="s-name">Fraud detection scan</span><span class="s-val" id="sv-fraud" style="color:var(--green-l)">clear</span></div>
+        <div class="statrow"><span class="sdot gold"></span><span class="s-name">Legacy ISAware bridge</span><span class="s-val" style="color:var(--gold)">draining</span></div>
+        <div class="statrow"><span class="sdot ok"></span><span class="s-name">Longhorn replicas</span><span class="s-val" id="sv-rep" style="color:var(--green-l)">3/3 in sync</span></div>
+      </div>
+    </section>
+
+    <!-- Instance identity -->
+    <section class="card span7">
+      <h2>Workload Identity</h2>
+      <table class="idtable">
+        <tr><td class="l">Pod</td><td class="v" id="id-pod">—</td></tr>
+        <tr><td class="l">Node</td><td class="v" id="id-node">—</td></tr>
+        <tr><td class="l">Namespace</td><td class="v" id="id-ns">—</td></tr>
+        <tr><td class="l">Pod IP</td><td class="v" id="id-podip">—</td></tr>
+        <tr><td class="l">Host IP</td><td class="v" id="id-hostip">—</td></tr>
+        <tr><td class="l">Node role</td><td class="v" id="id-role">—</td></tr>
+      </table>
+    </section>
+
+    <!-- Log stream -->
+    <section class="card span12">
+      <h2>Operations Activity Stream</h2>
+      <div class="log" id="log"></div>
+    </section>
+  </div>
+
+  <footer class="foot">
+    <div class="powered">Running on <b>SUSE Virtualization</b> · Rancher Prime · K3s · Longhorn</div>
+    <div style="margin-top:6px">Vertex Trust Bank is a fictional company used for demonstration only. This dashboard is not a SUSE product and is not affiliated with or endorsed by SUSE. Simulated metrics are cosmetic and do not represent real financial data.</div>
+  </footer>
+</div>
+
+<script>
+'use strict';
+
+// ── State ──────────────────────────────────────────────────────────────────
+var lastLoad1 = 0.3;
+var tpsHist = [];
+var tpsTarget = 1200, tpsShown = 1200;
+var lastFetch = 0;
+var seenNodes = false;
+
+// ── Clock ──────────────────────────────────────────────────────────────────
+function tickClock() {
+  var d = new Date();
+  var p = function (n) { return String(n).padStart(2, '0'); };
+  document.getElementById('clock').textContent =
+    p(d.getHours()) + ':' + p(d.getMinutes()) + ':' + p(d.getSeconds()) + ' UTC' +
+    (d.getTimezoneOffset() <= 0 ? '+' : '-') + Math.abs(d.getTimezoneOffset() / 60);
+}
+setInterval(tickClock, 1000); tickClock();
+
+// ── Meter class helper ─────────────────────────────────────────────────────
+function fillClass(pct) { return pct >= 85 ? 'fill crit' : pct >= 65 ? 'fill warn' : 'fill'; }
+
+// ── Fetch real cluster info ────────────────────────────────────────────────
+function refresh() {
+  fetch('/api/info', { cache: 'no-store' })
+    .then(function (r) { return r.json(); })
+    .then(function (d) {
+      if (d.error) throw new Error(d.error);
+      lastFetch = Date.now();
+      setStatus(true);
+
+      text('instance', d.clusterName);
+      text('k-cluster', d.clusterName);
+      text('k-role', d.nodeRole);
+      text('k-nodes', d.nodeCount);
+      text('k-arch', d.nodeArch);
+      text('k-dist', d.distribution);
+      text('k-ver', d.k8sVersion);
+      text('k-os', d.osRelease);
+      text('k-uptime', d.uptime);
+
+      // compute meters
+      lastLoad1 = (typeof d.load1 === 'number' && !isNaN(d.load1)) ? d.load1 : 0.3;
+      var cpuPct = Math.min(100, Math.round((lastLoad1 / Math.max(1, d.cpuCount)) * 100));
+      setMeter('cpu', cpuPct, cpuPct + '%');
+      setMeter('mem', d.memPercent, d.memUsed + ' / ' + d.memTotal + '  (' + d.memPercent + '%)');
+      text('loadVal', d.loadAvg);
+      text('cpuModel', d.cpuCount + ' × ' + d.cpuModel);
+
+      // identity
+      text('id-pod', d.podName);
+      text('id-node', d.nodeName);
+      text('id-ns', d.namespace);
+      text('id-podip', d.podIP);
+      text('id-hostip', d.hostIP);
+      text('id-role', d.nodeRole);
+
+      // cosmetic replica count follows node count
+      var n = parseInt(d.nodeCount, 10);
+      if (!isNaN(n) && n > 0) document.getElementById('sv-rep').textContent = n + '/' + n + ' in sync';
+
+      if (!seenNodes) {
+        seenNodes = true;
+        logLine('ok', 'cluster ' + d.clusterName + ' connected · ' + d.distribution + ' ' + d.k8sVersion);
+        logLine('info', d.nodeCount + ' node(s) reporting · arch ' + d.nodeArch + ' · ' + d.osRelease);
+      }
+    })
+    .catch(function (e) {
+      setStatus(false);
+      logLine('gold', 'api/info degraded: ' + e.message);
+    });
+}
+
+function setStatus(ok) {
+  var dot = document.getElementById('statusDot');
+  var txt = document.getElementById('statusText');
+  if (ok) { dot.className = 'dot'; txt.textContent = 'LIVE'; }
+  else    { dot.className = 'dot stale'; txt.textContent = 'RECONNECTING'; }
+}
+
+function setMeter(id, pct, label) {
+  var f = document.getElementById(id + 'Fill');
+  f.className = fillClass(pct);
+  f.style.width = Math.max(2, Math.min(100, pct)) + '%';
+  document.getElementById(id + 'Val').textContent = label;
+}
+
+function text(id, v) { var el = document.getElementById(id); if (el && v != null) el.textContent = v; }
+
+// ── Cosmetic TPS derived from real load ────────────────────────────────────
+// Base throughput scales with node load so the "bank" reacts to real cluster
+// activity; jitter keeps it lively. Purely for demo immersion.
+function tickTps() {
+  var base = 900 + lastLoad1 * 1400;
+  tpsTarget = base + (Math.random() - 0.5) * 260;
+  if (Math.random() < 0.05) tpsTarget += 600; // occasional settlement burst
+  tpsTarget = Math.max(120, tpsTarget);
+}
+setInterval(tickTps, 2000); tickTps();
+
+function animateTps() {
+  tpsShown += (tpsTarget - tpsShown) * 0.12;
+  document.getElementById('tps').textContent = Math.round(tpsShown).toLocaleString('en-US');
+  tpsHist.push(tpsShown);
+  if (tpsHist.length > 120) tpsHist.shift();
+  drawSpark();
+  requestAnimationFrame(animateTps);
+}
+
+function drawSpark() {
+  var c = document.getElementById('spark');
+  var ctx = c.getContext('2d');
+  var W = c.width, H = c.height;
+  ctx.clearRect(0, 0, W, H);
+  if (tpsHist.length < 2) return;
+  var max = Math.max.apply(null, tpsHist) * 1.1, min = Math.min.apply(null, tpsHist) * 0.9;
+  var span = Math.max(1, max - min);
+  var x = function (i) { return (i / (tpsHist.length - 1)) * W; };
+  var y = function (v) { return H - ((v - min) / span) * (H - 12) - 6; };
+
+  // fill
+  var grad = ctx.createLinearGradient(0, 0, 0, H);
+  grad.addColorStop(0, 'rgba(48,186,120,0.35)');
+  grad.addColorStop(1, 'rgba(48,186,120,0)');
+  ctx.beginPath();
+  ctx.moveTo(0, H);
+  for (var i = 0; i < tpsHist.length; i++) ctx.lineTo(x(i), y(tpsHist[i]));
+  ctx.lineTo(W, H); ctx.closePath();
+  ctx.fillStyle = grad; ctx.fill();
+
+  // line
+  ctx.beginPath();
+  for (var j = 0; j < tpsHist.length; j++) { var px = x(j), py = y(tpsHist[j]); j === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py); }
+  ctx.lineWidth = 2.5; ctx.strokeStyle = '#30ba78'; ctx.lineJoin = 'round'; ctx.stroke();
+
+  // head dot
+  var hx = x(tpsHist.length - 1), hy = y(tpsHist[tpsHist.length - 1]);
+  ctx.beginPath(); ctx.arc(hx, hy, 3.5, 0, Math.PI * 2); ctx.fillStyle = '#d4af37'; ctx.fill();
+}
+requestAnimationFrame(animateTps);
+
+// ── Activity log (bank-flavored, cosmetic) ─────────────────────────────────
+var LOG_MSGS = [
+  ['ok',   'ledger block committed · height +1 · quorum 3/3'],
+  ['info', 'settlement batch cleared · SEPA rail'],
+  ['ok',   'inter-branch transfer settled · corridor EU-01'],
+  ['info', 'KYC record verified · vault sealed'],
+  ['gold', 'fraud model score 0.02 · below threshold'],
+  ['ok',   'Longhorn snapshot taken · ledger volume'],
+  ['info', 'live migration probe · migration net healthy'],
+  ['ok',   'nightly reconciliation checkpoint written'],
+  ['gold', 'ISAware bridge draining legacy sessions'],
+  ['info', 'card authorization approved · issuer online'],
+  ['ok',   'replica resync complete · 0 divergent blocks']
+];
+function logLine(cls, msg) {
+  var log = document.getElementById('log');
+  var d = new Date();
+  var p = function (n) { return String(n).padStart(2, '0'); };
+  var ts = p(d.getHours()) + ':' + p(d.getMinutes()) + ':' + p(d.getSeconds());
+  var atBottom = log.scrollHeight - log.scrollTop - log.clientHeight < 24;
+  var el = document.createElement('div');
+  el.className = 'ln ' + cls;
+  el.innerHTML = '<span class="t">[' + ts + ']</span> <span class="m">' + msg + '</span>';
+  log.appendChild(el);
+  while (log.childElementCount > 200) log.removeChild(log.firstChild);
+  if (atBottom) log.scrollTop = log.scrollHeight;
+}
+function randomLog() {
+  var m = LOG_MSGS[Math.floor(Math.random() * LOG_MSGS.length)];
+  logLine(m[0], m[1]);
+}
+
+// ── Boot ───────────────────────────────────────────────────────────────────
+logLine('info', 'Vertex Trust Bank operations console initialised');
+refresh();
+setInterval(refresh, 10000);          // real data every 10s
+setInterval(randomLog, 3200);         // cosmetic activity
+// staleness watchdog
+setInterval(function () { if (Date.now() - lastFetch > 25000) setStatus(false); }, 5000);
+</script>
+</body>
+</html>

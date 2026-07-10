@@ -1,0 +1,19 @@
+# SPDX-License-Identifier: Apache-2.0
+# ledger-core overlay — primary datacenter ledger cluster.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../k8s/00-namespace.yaml
+  - ../../k8s/01-rbac.yaml
+  - ../../k8s/02-deployment.yaml
+  - ../../k8s/03-configmap.yaml
+  - ../../k8s/04-service.yaml
+patches:
+  - patch: |-
+      apiVersion: v1
+      kind: ConfigMap
+      metadata:
+        name: vertex-bank-config
+        namespace: vertex-bank
+      data:
+        CLUSTER_NAME: "LEDGER-CORE-01"

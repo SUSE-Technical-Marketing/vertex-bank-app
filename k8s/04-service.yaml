@@ -1,0 +1,24 @@
+# SPDX-License-Identifier: Apache-2.0
+# 04-service.yaml — NodePort by default. For the rodeo the console is exposed
+# via a LoadBalancer from the rodeo IP pool (see README); flip the type below
+# or apply k8s/optional/vertex-bank-lb-service.yaml instead (same object name,
+# so replace this Service, do not apply both).
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: vertex-bank
+  namespace: vertex-bank
+  labels:
+    app.kubernetes.io/name: vertex-bank
+    app.kubernetes.io/part-of: suse-virtualization-rodeo
+spec:
+  selector:
+    app: vertex-bank
+  type: NodePort
+  ports:
+    - name: http
+      port: 80
+      targetPort: 3000
+      nodePort: 30080
+      protocol: TCP

@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: Apache-2.0
+# 03-configmap.yaml — per-cluster instance name for the console.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: vertex-bank-config
+  namespace: vertex-bank
+  labels:
+    app.kubernetes.io/name: vertex-bank
+    app.kubernetes.io/part-of: suse-virtualization-rodeo
+data:
+  # Display name shown on the console header. Override per cluster via overlays,
+  # e.g. "LEDGER-CORE-01", "LEDGER-EDGE-BRANCH-042".
+  CLUSTER_NAME: "LEDGER-CORE-01"

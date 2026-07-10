@@ -1,0 +1,118 @@
+# SPDX-License-Identifier: Apache-2.0
+# 02-deployment.yaml — vertex-bank operations console.
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vertex-bank
+  namespace: vertex-bank
+  labels:
+    app.kubernetes.io/name: vertex-bank
+    app.kubernetes.io/part-of: suse-virtualization-rodeo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: vertex-bank
+  template:
+    metadata:
+      labels:
+        app: vertex-bank
+        app.kubernetes.io/name: vertex-bank
+    spec:
+      serviceAccountName: vertex-bank
+      # k3s and RKE2 mount projected (bound) tokens at the standard path;
+      # server.js reads them on every API call to survive hourly rotation.
+      automountServiceAccountToken: true
+      containers:
+        - name: vertex-bank
+          image: docker.io/avaleror/vertex-bank-app:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3000
+              name: http
+              protocol: TCP
+          env:
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: HOST_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.hostIP
+            # Instance / cluster display name — overridden per cluster via overlay.
+            - name: CLUSTER_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: vertex-bank-config
+                  key: CLUSTER_NAME
+                  optional: true
+            - name: PORT
+              value: "3000"
+          resources:
+            requests:
+              cpu: "25m"
+              memory: "32Mi"
+            limits:
+              cpu: "100m"
+              memory: "64Mi"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 10
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false
+            runAsNonRoot: true
+            runAsUser: 1000   # matches vbank uid in Dockerfile (--uid 1000)
+            runAsGroup: 1000  # matches vbank gid in Dockerfile (--gid 1000)
+            seccompProfile:
+              type: RuntimeDefault
+            capabilities:
+              drop:
+                - ALL
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/arch
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app: vertex-bank
+      # Tolerate control-plane taints — needed on single-node k3s where the only
+      # node carries the control-plane taint (common in Rancher Desktop / a
+      # freshly provisioned single-worker cluster).
+      tolerations:
+        - key: "node-role.kubernetes.io/control-plane"
+          operator: "Exists"
+          effect: "NoSchedule"
+        - key: "node-role.kubernetes.io/master"
+          operator: "Exists"
+          effect: "NoSchedule"
+        - key: "node-role.kubernetes.io/etcd"
+          operator: "Exists"
+          effect: "NoExecute"

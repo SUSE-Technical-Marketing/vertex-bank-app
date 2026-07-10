@@ -1,0 +1,44 @@
+# SPDX-License-Identifier: Apache-2.0
+# fleet.yaml — Fleet GitOps bundle. Docs: https://fleet.rancher.io/ref-fleet-yaml
+#
+# defaultNamespace is the fallback for resources without an explicit namespace.
+# It does NOT restrict namespaces, so cluster-scoped resources (ClusterRole,
+# ClusterRoleBinding) pass through unmodified.
+defaultNamespace: vertex-bank
+
+helm:
+  # takeOwnership lets Fleet's Helm engine adopt the vertex-bank namespace even
+  # if it was pre-created, avoiding "invalid ownership metadata" errors.
+  takeOwnership: true
+
+targets:
+  # Core ledger cluster — overlay sets CLUSTER_NAME=LEDGER-CORE-01.
+  # bank=true is required on ALL targets; a cluster without it matches nothing.
+  - name: ledger-core
+    clusterSelector:
+      matchLabels:
+        bank: "true"
+        ledger-tier: core
+    kustomize:
+      dir: overlays/ledger-core
+
+  # Edge / branch ledger cluster — overlay sets CLUSTER_NAME=LEDGER-EDGE-01.
+  - name: ledger-edge
+    clusterSelector:
+      matchLabels:
+        bank: "true"
+        ledger-tier: edge
+    kustomize:
+      dir: overlays/ledger-edge
+
+  # Any other bank cluster — base manifests, default instance name.
+  - name: all-bank-clusters
+    clusterSelector:
+      matchLabels:
+        bank: "true"
+    kustomize:
+      dir: overlays/default
+
+  # ── NO FALLBACK ────────────────────────────────────────────────────────────
+  # There is intentionally no target with clusterSelector: {}.
+  # A cluster without bank=true matches nothing and receives nothing.

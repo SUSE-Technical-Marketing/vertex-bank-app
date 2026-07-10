@@ -1,0 +1,46 @@
+# SPDX-License-Identifier: Apache-2.0
+# 01-rbac.yaml — ServiceAccount, ClusterRole, ClusterRoleBinding.
+# Read-only access to nodes and /version. No writes, no secrets, no pods.
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: vertex-bank
+  namespace: vertex-bank
+  labels:
+    app.kubernetes.io/name: vertex-bank
+    app.kubernetes.io/part-of: suse-virtualization-rodeo
+# automountServiceAccountToken left at default (true). k3s and RKE2 both mount
+# projected (bound) tokens rotated ~hourly; server.js re-reads on every call.
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: vertex-bank-reader
+  labels:
+    app.kubernetes.io/name: vertex-bank
+    app.kubernetes.io/part-of: suse-virtualization-rodeo
+rules:
+  # Node list + get — node count, arch, OS image, kubelet version, role labels.
+  - apiGroups: [""]
+    resources: ["nodes"]
+    verbs: ["get", "list"]
+  # /version — K8s server version + k3s/RKE2 distribution detection.
+  - nonResourceURLs: ["/version"]
+    verbs: ["get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: vertex-bank-reader
+  labels:
+    app.kubernetes.io/name: vertex-bank
+    app.kubernetes.io/part-of: suse-virtualization-rodeo
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: vertex-bank-reader
+subjects:
+  - kind: ServiceAccount
+    name: vertex-bank
+    namespace: vertex-bank
