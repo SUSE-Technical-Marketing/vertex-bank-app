@@ -229,4 +229,4 @@ Licensed under the Apache License, Version 2.0. See `LICENSE`.
 
 ---
 
-*Vertex Trust Bank — every ledger block committed, no Broadcom invoice.*
+*Vertex Trust Bank — every ledger block committed, fully open source.*
