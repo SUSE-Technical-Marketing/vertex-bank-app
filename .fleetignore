@@ -1,0 +1,10 @@
+# Keep k8s/optional/vertex-bank-lb-service.yaml out of the Fleet bundle
+# (Fleet matches ignore patterns per directory, so it is named by file). It has the
+# same name as k8s/04-service.yaml, so when a GitRepo targets clusters directly
+# (no fleet.yaml customization applies) both land and the LoadBalancer wins.
+# On labs without a LoadBalancer provider that leaves the bundle NotReady.
+# Apply k8s/optional/vertex-bank-lb-service.yaml by hand where you want it.
+vertex-bank-lb-service.yaml
+# Not Kubernetes manifests.
+app/*
+Dockerfile

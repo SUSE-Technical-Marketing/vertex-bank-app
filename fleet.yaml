@@ -40,5 +40,9 @@ targets:
       dir: overlays/default
 
   # ── NO FALLBACK ────────────────────────────────────────────────────────────
-  # There is intentionally no target with clusterSelector: {}.
-  # A cluster without bank=true matches nothing and receives nothing.
+  # There is intentionally no target with clusterSelector: {}, so with a GitRepo
+  # that defines no targets of its own, a cluster without bank=true receives
+  # nothing. A GitRepo that DOES define targets (the SUSE Edge workshop selects
+  # demo=true + edge-type=x86-cluster) replaces these: its clusters get the base
+  # k8s/ manifests with the NodePort Service. .fleetignore keeps the optional
+  # LoadBalancer Service out of that bundle.
